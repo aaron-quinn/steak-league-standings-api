@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "npx nodemon server.js"
   },
   "author": "",
   "license": "ISC",
@@ -27,8 +27,11 @@
       "no-undef": "off"
     }
   },
-  "type": "module",
   "dependencies": {
-    "fastify": "^4.5.3"
-  }
+    "axios": "^0.27.2",
+    "cheerio": "^1.0.0-rc.12",
+    "fastify": "^4.5.3",
+    "nodemon": "^2.0.19"
+  },
+  "type": "module"
 }
