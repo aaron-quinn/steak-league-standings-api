@@ -1,18 +1,17 @@
 import * as cheerio from 'cheerio';
 import getHTML from '../utils/get-html.js';
-import scrapeTeamPoints from './team-points.js';
-import scrapeTeamID from './team-id.js';
 import sortTeamList from '../utils/sort-team-list.js';
-import scrapeWinLossTie from './win-loss-tie.js';
+import scrapeTeamPointsLive from './live-team-points.js';
+import scrapeTeamIDLive from './live-team-id.js';
 
-export default async function scrapeStandings({
+export default async function scrapeStandingsLive({
   season,
   leagueID,
   prefix = '',
 }) {
   try {
     // Get the HTML from the standings page and load it into Cheerio
-    const standingsURL = `https://www65.myfantasyleague.com/${season}/options?L=${leagueID}&O=101&SORT=PTS`;
+    const standingsURL = `https://www65.myfantasyleague.com/${season}/options?LEAGUE_ID=${leagueID}&END_WEEK=18&OPTION=23&SORT=TOTAL`;
     const standingsHTML = await getHTML(standingsURL);
     const $ = cheerio.load(standingsHTML);
 
@@ -26,15 +25,17 @@ export default async function scrapeStandings({
         return;
       }
 
-      const points = scrapeTeamPoints($(row));
-      const winLossTie = scrapeWinLossTie($(row));
-      const teamID = scrapeTeamID($(row), prefix);
+      const points = scrapeTeamPointsLive($(row));
+      const teamID = scrapeTeamIDLive($(row), prefix);
+      if (!teamID) {
+        return false;
+      }
 
       teams[teamID] = {
         points: Number(points).toFixed(2),
-        wins: Number(winLossTie.split('-')[0]),
-        losses: Number(winLossTie.split('-')[1]),
-        ties: Number(winLossTie.split('-')[2]),
+        wins: 0,
+        losses: 0,
+        ties: 0,
       };
     });
 

@@ -1,4 +1,4 @@
-import scrapeStandings from '../../scrape/standings.js';
+import scrapeStandingsLive from '../../scrape/live-standings.js';
 import getDefaults from '../../utils/get-defaults.js';
 import sortTeamList from '../../utils/sort-team-list.js';
 
@@ -9,13 +9,14 @@ export default async function standingsYear(request, reply) {
   const teamList = {};
 
   for (const league of leagues) {
-    const teams = await scrapeStandings({
+    const teams = await scrapeStandingsLive({
       season,
       leagueID: league.id,
       prefix: `${league.name}`,
     });
-    if (teams.error) {
-      throw new Error(error);
+
+    if (teams?.error) {
+      throw new Error(teams?.error);
     }
 
     Object.entries(teams).forEach((team) => {
