@@ -4,17 +4,7 @@ import cors from '@fastify/cors';
 import routes from './routes/index.js';
 const fastify = Fastify({ logger: true });
 await fastify.register(cors, {
-  origin: (origin, cb) => {
-    const hostname = new URL(origin).hostname;
-    if (
-      ['localhost', 'steakstandings', 'steakstandings.com'].includes(hostname)
-    ) {
-      cb(null, true);
-      return;
-    }
-    // Generate an error on other origins, disabling access
-    cb(new Error('Not allowed'), false);
-  },
+  origin: true,
 });
 
 // Register routes
