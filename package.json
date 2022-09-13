@@ -28,6 +28,7 @@
     }
   },
   "dependencies": {
+    "@fastify/cors": "^8.1.0",
     "axios": "^0.27.2",
     "cheerio": "^1.0.0-rc.12",
     "fastify": "^4.5.3",
