@@ -1,5 +1,5 @@
 import getData from './get-data.js';
-import getMFLPlayers from '../utils/mfl-players.js';
+import getPlayers from './players.js';
 
 export default async function getFantasyPoints({
   season,
@@ -11,16 +11,16 @@ export default async function getFantasyPoints({
     const fantasyPtsURL = `/${season}/export?TYPE=playerScores&L=${leagueID}&W=YTD&YEAR=${season}&JSON=1`;
 
     const fantasyPtsResponse = await getData(fantasyPtsURL);
+    const playerList = await getPlayers({ season });
+
     const playersWithPoints = fantasyPtsResponse.playerScores.playerScore;
-    const mflPlayers = getMFLPlayers();
 
     // Match up the array of players with points to the array of players from the MFL API
-    const players = playersWithPoints.map((player) => {
-      const mflPlayer = mflPlayers.find((p) => p.id === player.id);
-      console.log(player);
+    const players = playerList.map((player) => {
+      const mflPlayer = playersWithPoints.find((p) => p.id === player.id);
       return {
-        ...mflPlayer,
-        points: player.score,
+        ...player,
+        points: mflPlayer?.score || 0,
       };
     });
     return players;
