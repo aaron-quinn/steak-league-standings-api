@@ -8,6 +8,7 @@ export default async function getLiveScores({ season, leagueID, prefix = '' }) {
     console.log(liveScoresURL);
     const liveScoresResponse = await getData(liveScoresURL);
     const matchups = liveScoresResponse.liveScoring.matchup;
+    const teamsOnBye = liveScoresResponse.liveScoring.franchise;
 
     const liveScores = {};
 
@@ -17,6 +18,10 @@ export default async function getLiveScores({ season, leagueID, prefix = '' }) {
         const { id, score } = team;
         liveScores[`${prefix}${id}`] = score;
       });
+    });
+    teamsOnBye.forEach((teamOnBye) => {
+      const { id, score } = teamOnBye;
+      liveScores[`${prefix}${id}`] = score;
     });
     return liveScores;
   } catch (error) {
