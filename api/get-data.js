@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://www65.myfantasyleague.com',
+  baseURL: 'https://api.myfantasyleague.com',
   headers: {
     'Content-type': 'application/json',
   },
