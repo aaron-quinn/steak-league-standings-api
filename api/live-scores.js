@@ -1,6 +1,8 @@
 import getData from './get-data.js';
 import getPlayerList from './players.js';
 
+const scheduleCache = {};
+
 export default async function getLiveScores({ season, leagueID, prefix = '' }) {
   try {
     // Get the live scores from the MFL API
@@ -12,8 +14,16 @@ export default async function getLiveScores({ season, leagueID, prefix = '' }) {
     ]);
 
     const week = liveScoresResponse.liveScoring.week;
-    const scheduleURL = `/${season}/export?TYPE=nflSchedule&W=${week}&JSON=1`;
-    const scheduleResponse = await getData(scheduleURL);
+
+    let scheduleResponse;
+    const scheduleKey = `${season}-${week}`;
+    if (scheduleCache[scheduleKey]) {
+      scheduleResponse = scheduleCache[scheduleKey];
+    } else {
+      const scheduleURL = `/${season}/export?TYPE=nflSchedule&W=${week}&JSON=1`;
+      scheduleResponse = await getData(scheduleURL);
+      scheduleCache[scheduleKey] = scheduleResponse;
+    }
 
     const teamSchedule = {};
     if (scheduleResponse.nflSchedule && scheduleResponse.nflSchedule.matchup) {
