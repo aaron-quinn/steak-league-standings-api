@@ -32,15 +32,22 @@ export default async function standingsYear(request, reply) {
 
     Object.entries(teamList).map((team) => {
       const [teamID, teamData] = team;
-      if (!liveScores[teamID]) {
+      const liveData = liveScores[teamID];
+      if (!liveData) {
         return team;
       }
       teamList[teamID] = teamData;
       teamList[teamID].points =
-        Number(liveScores[teamID]) + Number(teamData.points);
+        Number(liveData.score) + Number(teamData.points);
       teamList[teamID].points = (
         Math.round(teamList[teamID].points * 100) / 100
       ).toFixed(2);
+
+      teamList[teamID].yetToPlay = liveData.yetToPlay;
+      teamList[teamID].inProgress = liveData.inProgress;
+      teamList[teamID].yetToPlayNames = liveData.yetToPlayNames;
+      teamList[teamID].inProgressNames = liveData.inProgressNames;
+
       return team;
     });
   }
