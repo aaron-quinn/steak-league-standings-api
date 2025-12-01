@@ -43,6 +43,7 @@ export default async function standingsYear(request, reply) {
         Math.round(teamList[teamID].points * 100) / 100
       ).toFixed(2);
 
+      teamList[teamID].weeklyScore = Number(liveData.score);
       teamList[teamID].yetToPlay = liveData.yetToPlay;
       teamList[teamID].inProgress = liveData.inProgress;
       teamList[teamID].yetToPlayNames = liveData.yetToPlayNames;
