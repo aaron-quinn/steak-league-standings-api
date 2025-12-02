@@ -121,7 +121,10 @@ export default async function getLiveScores({ season, leagueID, prefix = '' }) {
       byeTeams.forEach(processFranchise);
     }
 
-    return liveScores;
+    return {
+      week,
+      scores: liveScores,
+    };
   } catch (error) {
     return { error };
   }

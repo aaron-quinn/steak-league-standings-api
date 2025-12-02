@@ -24,7 +24,11 @@ export default async function standingsYear(request, reply) {
       teamList[teamID] = teamData;
     });
 
-    const liveScores = await getLiveScores({
+    const {
+      scores: liveScores,
+      week: liveWeek,
+      error: liveError,
+    } = await getLiveScores({
       season,
       leagueID: league.id,
       prefix: `${league.name}`,
@@ -32,10 +36,21 @@ export default async function standingsYear(request, reply) {
 
     Object.entries(teamList).map((team) => {
       const [teamID, teamData] = team;
+
+      if (liveError || !liveScores) {
+        return team;
+      }
+
       const liveData = liveScores[teamID];
       if (!liveData) {
         return team;
       }
+
+      const gamesPlayed = teamData.wins + teamData.losses + teamData.ties;
+      if (gamesPlayed === Number(liveWeek)) {
+        return team;
+      }
+
       teamList[teamID] = teamData;
       teamList[teamID].points =
         Number(liveData.score) + Number(teamData.points);
