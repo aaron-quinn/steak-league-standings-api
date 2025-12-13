@@ -160,10 +160,12 @@ export default async function getLiveMatchups({
       byeTeams.forEach((team) => {
         const teamID = team?.id ?? null;
         if (teamID !== null) {
-          matchupData.push({
-            franchiseID: `${prefix}${teamID}`,
-            ...liveScores[`${prefix}${teamID}`],
-          });
+          matchupData.push([
+            {
+              franchiseID: `${prefix}${teamID}`,
+              ...liveScores[`${prefix}${teamID}`],
+            },
+          ]);
         }
       });
     }
