@@ -26,8 +26,9 @@ export default async function standingsYear(request, reply) {
 
     const {
       scores: liveScores,
-      week: liveWeek,
       error: liveError,
+      matchups,
+      week,
     } = await getLiveScores({
       season,
       leagueID: league.id,
@@ -47,7 +48,7 @@ export default async function standingsYear(request, reply) {
       }
 
       const gamesPlayed = teamData.wins + teamData.losses + teamData.ties;
-      if (gamesPlayed === Number(liveWeek)) {
+      if (gamesPlayed === Number(week)) {
         return team;
       }
 
@@ -66,6 +67,39 @@ export default async function standingsYear(request, reply) {
 
       return team;
     });
+
+    if (week <= 14 && matchups) {
+      matchups.forEach((matchup) => {
+        const franchise1 = matchup.franchise[0];
+        const franchise2 = matchup.franchise[1];
+        const id1 = `${league.name}${franchise1.id}`;
+        const id2 = `${league.name}${franchise2.id}`;
+        const score1 = Number(franchise1.score);
+        const score2 = Number(franchise2.score);
+
+        if (teamList[id1] && teamList[id2]) {
+          const team1 = teamList[id1];
+          const team2 = teamList[id2];
+          const gamesPlayed1 = team1.wins + team1.losses + team1.ties;
+          const gamesPlayed2 = team2.wins + team2.losses + team2.ties;
+
+          if (gamesPlayed1 === week || gamesPlayed2 === week) {
+            return;
+          }
+
+          if (score1 > score2) {
+            teamList[id1].wins++;
+            teamList[id2].losses++;
+          } else if (score2 > score1) {
+            teamList[id2].wins++;
+            teamList[id1].losses++;
+          } else {
+            teamList[id1].ties++;
+            teamList[id2].ties++;
+          }
+        }
+      });
+    }
   }
 
   reply.send(sortTeamList(teamList, 'points'));

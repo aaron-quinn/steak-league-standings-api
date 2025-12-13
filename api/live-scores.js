@@ -122,8 +122,9 @@ export default async function getLiveScores({ season, leagueID, prefix = '' }) {
     }
 
     return {
-      week,
       scores: liveScores,
+      matchups: matchups || [],
+      week: parseInt(week, 10),
     };
   } catch (error) {
     return { error };
