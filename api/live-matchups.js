@@ -124,6 +124,7 @@ export default async function getLiveMatchups({
         const playerResult = {
           mflPlayerID: player.id,
           ...playerInfo,
+          isStarter: player.status === 'starter',
           gameStatus,
           gameInfo,
         };
