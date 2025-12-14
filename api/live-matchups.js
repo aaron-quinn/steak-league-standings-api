@@ -24,24 +24,28 @@ export default async function getLiveMatchups({
     if (scheduleCache[scheduleKey]) {
       scheduleResponse = scheduleCache[scheduleKey];
     } else {
-      const scheduleURL = `/${season}/export?TYPE=nflSchedule&W=${week}&JSON=1`;
+      const scheduleURL = `/fflnetdynamic${season}/nfl_sched_${week}.json`;
       scheduleResponse = await getData(scheduleURL);
       scheduleCache[scheduleKey] = scheduleResponse;
     }
 
     const teamSchedule = {};
-    const teamOpponents = {};
-    const teamIsHomeTeam = {};
     if (scheduleResponse.nflSchedule && scheduleResponse.nflSchedule.matchup) {
       scheduleResponse.nflSchedule.matchup.forEach((matchup) => {
         const kickoff = parseInt(matchup.kickoff, 10);
-        matchup.team.forEach((t) => {
-          teamSchedule[t.id] = kickoff;
+        const gameSecondsRemaining = parseInt(matchup.gameSecondsRemaining, 10);
+
+        matchup.team.forEach((t, idx) => {
+          teamSchedule[t.id] = {
+            kickoff,
+            isHome: t.isHome == '1',
+            opponentTeam: matchup.team[1 - idx].id,
+            gameSecondsRemaining,
+            hasPossession: t.hasPossession == '1',
+            inRedZone: t.inRedZone == '1',
+            score: t.score + '-' + matchup.team[1 - idx].score,
+          };
         });
-        teamOpponents[matchup.team[0].id] = matchup.team[1].id;
-        teamOpponents[matchup.team[1].id] = matchup.team[0].id;
-        teamIsHomeTeam[matchup.team[0].id] = matchup.team[0].isHome === '1';
-        teamIsHomeTeam[matchup.team[1].id] = matchup.team[1].isHome === '1';
       });
     }
 
@@ -72,10 +76,7 @@ export default async function getLiveMatchups({
       let inProgress = 0;
       let completed = 0;
       let benched = 0;
-      const yetToPlayNames = [];
-      const inProgressNames = [];
-      const completedNames = [];
-      const benchedNames = [];
+      const players = [];
 
       const playersList = Array.isArray(teamPlayers)
         ? teamPlayers
@@ -90,58 +91,58 @@ export default async function getLiveMatchups({
           position: '',
         };
 
-        let gameTime = '';
-        let kickoffUTC = null;
-        let opponentDisplay = '';
+        let gameInfo = null;
         if (playerInfo.team && teamSchedule[playerInfo.team]) {
-          kickoffUTC = teamSchedule[playerInfo.team];
-          const opponentTeam = teamOpponents[playerInfo.team] || 'TBD';
-          const isHome = teamIsHomeTeam[playerInfo.team];
-          opponentDisplay = isHome ? `vs ${opponentTeam}` : `@ ${opponentTeam}`;
-          const date = new Date(kickoffUTC * 1000);
-          gameTime = date.toLocaleString('en-US', {
-            weekday: 'short',
-            hour: 'numeric',
-            minute: 'numeric',
-            timeZone: 'America/New_York',
-            timeZoneName: 'short',
-          });
-          gameTime += ` ${opponentDisplay}`;
+          gameInfo = teamSchedule[playerInfo.team];
+          gameInfo = {
+            ...gameInfo,
+            opponentDisplay: gameInfo.isHome
+              ? `vs ${gameInfo.opponentTeam}`
+              : `@ ${gameInfo.opponentTeam}`,
+          };
         }
 
-        const playerResult = {
-          ...playerInfo,
-          gameTime,
-          kickoffUTC,
-          opponentDisplay,
-          score: player.score,
-        };
-
+        let gameStatus = 'unknown';
         if (player.status === 'starter') {
           if (remaining === 3600) {
             yetToPlay++;
-            yetToPlayNames.push(playerResult);
+            gameStatus = 'yet-to-play';
           } else if (remaining > 0) {
             inProgress++;
-            inProgressNames.push(playerResult);
+            gameStatus = 'in-progress';
           } else {
             completed++;
-            completedNames.push(playerResult);
+            gameStatus = 'completed';
           }
         } else if (player.status === 'nonstarter') {
+          if (remaining === 3600) {
+            gameStatus = 'yet-to-play';
+          } else if (remaining > 0) {
+            gameStatus = 'in-progress';
+          } else {
+            gameStatus = 'completed';
+          }
           benched++;
-          benchedNames.push(playerResult);
         }
+
+        const playerResult = {
+          mflPlayerID: player.id,
+          ...playerInfo,
+          score: player.score,
+          isStarter: player.status === 'starter',
+          gameStatus,
+          gameInfo,
+        };
+
+        players.push(playerResult);
       });
 
       liveScores[`${prefix}${id}`] = {
         score,
         yetToPlay,
         inProgress,
-        yetToPlayNames,
-        inProgressNames,
-        completedNames,
-        benchedNames,
+        completed,
+        players,
       };
     };
 
