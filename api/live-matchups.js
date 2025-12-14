@@ -50,6 +50,8 @@ export default async function getLiveMatchups({
       players.forEach((player) => {
         playerMap[player.id] = {
           name: player.name,
+          firstName: player.firstName,
+          lastName: player.lastName,
           position: player.position,
           team: player.team,
         };
