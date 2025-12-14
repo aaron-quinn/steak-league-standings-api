@@ -30,12 +30,18 @@ export default async function getLiveMatchups({
     }
 
     const teamSchedule = {};
+    const teamOpponents = {};
+    const teamIsHomeTeam = {};
     if (scheduleResponse.nflSchedule && scheduleResponse.nflSchedule.matchup) {
       scheduleResponse.nflSchedule.matchup.forEach((matchup) => {
         const kickoff = parseInt(matchup.kickoff, 10);
         matchup.team.forEach((t) => {
           teamSchedule[t.id] = kickoff;
         });
+        teamOpponents[matchup.team[0].id] = matchup.team[1].id;
+        teamOpponents[matchup.team[1].id] = matchup.team[0].id;
+        teamIsHomeTeam[matchup.team[0].id] = matchup.team[0].isHome === '1';
+        teamIsHomeTeam[matchup.team[1].id] = matchup.team[1].isHome === '1';
       });
     }
 
@@ -83,9 +89,14 @@ export default async function getLiveMatchups({
         };
 
         let gameTime = '';
+        let kickoffUTC = null;
+        let opponentDisplay = '';
         if (playerInfo.team && teamSchedule[playerInfo.team]) {
-          const kickoff = teamSchedule[playerInfo.team];
-          const date = new Date(kickoff * 1000);
+          kickoffUTC = teamSchedule[playerInfo.team];
+          const opponentTeam = teamOpponents[playerInfo.team] || 'TBD';
+          const isHome = teamIsHomeTeam[playerInfo.team];
+          opponentDisplay = isHome ? `vs ${opponentTeam}` : `@ ${opponentTeam}`;
+          const date = new Date(kickoffUTC * 1000);
           gameTime = date.toLocaleString('en-US', {
             weekday: 'short',
             hour: 'numeric',
@@ -93,11 +104,14 @@ export default async function getLiveMatchups({
             timeZone: 'America/New_York',
             timeZoneName: 'short',
           });
+          gameTime += ` ${opponentDisplay}`;
         }
 
         const playerResult = {
           ...playerInfo,
           gameTime,
+          kickoffUTC,
+          opponentDisplay,
           score: player.score,
         };
 
