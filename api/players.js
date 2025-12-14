@@ -21,6 +21,8 @@ export default async function getPlayerList({
     const result = players.map((player) => {
       const [lastName, firstName] = player.name.split(', ');
       player.name = `${firstName} ${lastName}`;
+      player.firstName = firstName;
+      player.lastName = lastName;
       return player;
     });
 
