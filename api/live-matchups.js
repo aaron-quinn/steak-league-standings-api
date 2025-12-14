@@ -24,7 +24,7 @@ export default async function getLiveMatchups({
     if (scheduleCache[scheduleKey]) {
       scheduleResponse = scheduleCache[scheduleKey];
     } else {
-      const scheduleURL = `/${season}/export?TYPE=nflSchedule&W=${week}&JSON=1`;
+      const scheduleURL = `/fflnetdynamic${season}/nfl_sched_${week}.json`;
       scheduleResponse = await getData(scheduleURL);
       scheduleCache[scheduleKey] = scheduleResponse;
     }
@@ -34,12 +34,16 @@ export default async function getLiveMatchups({
       scheduleResponse.nflSchedule.matchup.forEach((matchup) => {
         const kickoff = parseInt(matchup.kickoff, 10);
         const gameSecondsRemaining = parseInt(matchup.gameSecondsRemaining, 10);
+
         matchup.team.forEach((t, idx) => {
           teamSchedule[t.id] = {
             kickoff,
-            gameSecondsRemaining,
-            isHome: t.isHome === '1',
+            isHome: t.isHome == '1',
             opponentTeam: matchup.team[1 - idx].id,
+            gameSecondsRemaining,
+            hasPossession: t.hasPossession == '1',
+            inRedZone: t.inRedZone == '1',
+            score: t.score + '-' + matchup.team[1 - idx].score,
           };
         });
       });
@@ -124,6 +128,7 @@ export default async function getLiveMatchups({
         const playerResult = {
           mflPlayerID: player.id,
           ...playerInfo,
+          score: player.score,
           isStarter: player.status === 'starter',
           gameStatus,
           gameInfo,
