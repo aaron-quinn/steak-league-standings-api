@@ -1,7 +1,7 @@
+import getSchedule from './get-schedule.js';
 import getData from './get-data.js';
 import getPlayerList from './players.js';
-
-const scheduleCache = {};
+import convertTeamCode from '../utils/convert-team-code.js';
 
 export default async function getLiveMatchups({
   season,
@@ -19,31 +19,35 @@ export default async function getLiveMatchups({
 
     const week = liveScoresResponse.liveScoring.week;
 
-    let scheduleResponse;
-    const scheduleKey = `${season}-${week}`;
-    if (scheduleCache[scheduleKey]) {
-      scheduleResponse = scheduleCache[scheduleKey];
-    } else {
-      const scheduleURL = `/fflnetdynamic${season}/nfl_sched_${week}.json`;
-      scheduleResponse = await getData(scheduleURL);
-      scheduleCache[scheduleKey] = scheduleResponse;
-    }
+    const scheduleURL = `/apis/site/v2/sports/football/nfl/scoreboard?week=${week}`;
+    const scheduleResponse = await getSchedule(scheduleURL);
 
     const teamSchedule = {};
-    if (scheduleResponse.nflSchedule && scheduleResponse.nflSchedule.matchup) {
-      scheduleResponse.nflSchedule.matchup.forEach((matchup) => {
-        const kickoff = parseInt(matchup.kickoff, 10);
-        const gameSecondsRemaining = parseInt(matchup.gameSecondsRemaining, 10);
+    if (scheduleResponse.events) {
+      scheduleResponse.events.forEach((matchup) => {
+        const kickoff = Math.floor(Date.parse(matchup.date) / 1000);
+        const quarterNumber = parseInt(matchup.status.period, 10);
+        const quarterSecondsRemaining = parseInt(matchup.status.clock, 10);
+        const gameSecondsRemaining =
+          (4 - quarterNumber) * 900 + quarterSecondsRemaining;
 
-        matchup.team.forEach((t, idx) => {
-          teamSchedule[t.id] = {
+        const gameSituation = matchup.competitions[0].situation;
+        const inRedZone = gameSituation?.isRedZone;
+        const possessionTeamID = gameSituation?.possession;
+        const shortDownText = gameSituation?.downDistanceText;
+
+        matchup.competitions[0].competitors.forEach((t, idx) => {
+          const opponent = matchup.competitions[0].competitors[1 - idx];
+
+          teamSchedule[convertTeamCode(t.team.abbreviation)] = {
             kickoff,
-            isHome: t.isHome == '1',
-            opponentTeam: matchup.team[1 - idx].id,
             gameSecondsRemaining,
-            hasPossession: t.hasPossession == '1',
-            inRedZone: t.inRedZone == '1',
-            score: t.score + '-' + matchup.team[1 - idx].score,
+            isHome: t.homeAway == 'home',
+            score: t.score + '-' + opponent.score,
+            hasPossession: t.id == possessionTeamID,
+            inRedZone: t.id == possessionTeamID ? inRedZone : false,
+            shortDownText: t.id == possessionTeamID ? shortDownText : null,
+            opponentTeam: convertTeamCode(opponent.team.abbreviation),
           };
         });
       });
