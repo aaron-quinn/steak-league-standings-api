@@ -9,7 +9,7 @@ export default async function getWeek(request, reply) {
   const league = leagues[0];
 
   // Get standings to calculate week based on games played
-  const standings = await getStandings({
+  const { latestResultWeek, standings } = await getStandings({
     season,
     leagueID: league.id,
     prefix: league.name,
@@ -19,7 +19,8 @@ export default async function getWeek(request, reply) {
   let maxGamesPlayed = 0;
   if (standings && !standings.error) {
     Object.values(standings).forEach((team) => {
-      const gamesPlayed = (team.wins || 0) + (team.losses || 0) + (team.ties || 0);
+      const gamesPlayed =
+        (team.wins || 0) + (team.losses || 0) + (team.ties || 0);
       if (gamesPlayed > maxGamesPlayed) {
         maxGamesPlayed = gamesPlayed;
       }
