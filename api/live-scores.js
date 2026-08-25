@@ -13,6 +13,17 @@ export default async function getLiveScores({ season, leagueID, prefix = '' }) {
       getPlayerList({ season, leagueID }),
     ]);
 
+    // MFL has no live scoring in the offseason and returns an error instead
+    if (!liveScoresResponse.liveScoring) {
+      return {
+        week: null,
+        scores: {},
+        matchups: [],
+        unavailable:
+          liveScoresResponse.error?.$t || 'Live scoring is not available yet',
+      };
+    }
+
     const week = liveScoresResponse.liveScoring.week;
 
     let scheduleResponse;

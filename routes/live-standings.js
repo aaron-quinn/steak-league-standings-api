@@ -10,13 +10,29 @@ export default async function standingsYear(request, reply) {
   const teamList = {};
 
   for (const league of leagues) {
-    const { latestResultWeek, standings: teams } = await getStandings({
+    const {
+      latestResultWeek,
+      standings: teams,
+      error: standingsError,
+    } = await getStandings({
       season,
       leagueID: league.id,
       prefix: `${league.name}`,
     });
-    if (teams.error) {
-      throw new Error(teams.error);
+
+    // MFL rate limits (429) and getStandings reports that by returning only an
+    // error, so `teams` is undefined here rather than carrying an error flag.
+    if (standingsError || !teams) {
+      request.log.error(
+        standingsError,
+        `Unable to load ${season} standings for ${league.name}`,
+      );
+      reply.code(503).send({
+        statusCode: 503,
+        error: 'Service Unavailable',
+        message: `Unable to load standings for the ${season} season.`,
+      });
+      return;
     }
 
     Object.entries(teams).forEach((team) => {

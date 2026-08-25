@@ -17,6 +17,17 @@ export default async function getLiveMatchups({
       getPlayerList({ season, leagueID }),
     ]);
 
+    // MFL returns an error object instead of liveScoring in the offseason
+    // ("Live scoring not available until the season starts").
+    if (!liveScoresResponse.liveScoring) {
+      return {
+        week: null,
+        matchups: [],
+        unavailable:
+          liveScoresResponse.error?.$t || 'Live scoring is not available yet',
+      };
+    }
+
     const week = liveScoresResponse.liveScoring.week;
 
     const scheduleURL = `/apis/site/v2/sports/football/nfl/scoreboard?week=${week}`;
